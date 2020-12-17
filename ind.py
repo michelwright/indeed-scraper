@@ -47,6 +47,7 @@ class Indeed:
             s = re.sub('{["]*', '{"', s)
             s = re.sub('["]*}', '"}', s)
             jObj = json.loads(s)
+            jObj['link'] = 'https://www.indeed.com/viewjob?jk='+jObj['jk']
             self.results.append(jObj)
 
         print('Found ' + str(len(self.results)) + ' results')
