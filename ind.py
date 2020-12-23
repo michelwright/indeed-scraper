@@ -47,23 +47,19 @@ class Indeed:
         except (requests.ConnectionError):
             print('Error: Problem Connecting')
             pass
-
-        self.results = []
         try:
-            self.soup = BeautifulSoup(r.text, 'html.parser')
-            self.results = self.soup.body.find_all('div', {'class':'jobsearch-SerpJobCard unifiedRow row result'})
+            soup = BeautifulSoup(r.text, 'html.parser')
+            self.results = soup.body.find_all('div', {'class':'jobsearch-SerpJobCard unifiedRow row result'})
         except:
             print('Error Parsing')
             pass
 
-        print('Found ' + str(len(self.results)) + ' results')
 
-    #Compare to div results
-    def jsonResults(self):
-        self.scripts = self.soup.body.find_all('script', text=re.compile('jobmap'))
+        self.scripts = soup.body.find_all('script', text=re.compile('jobmap'))
         self.scripts = re.findall(r'({jk.*});', str(self.scripts[0]))
-        self.resultsObj = []
-        #Perform Data Cleansing
+        resultsObj = []
+
+        #Data Cleansing
         for s in self.scripts:
             s = re.sub(r'\s*', '', s)
             s = s.replace("'", '"')
@@ -73,36 +69,28 @@ class Indeed:
             s = re.sub('["]*}', '"}', s)
             jObj = json.loads(s)
             jObj['link'] = 'https://www.indeed.com/viewjob?jk='+jObj['jk']
-            self.resultsObj.append(jObj)
+            resultsObj.append(jObj)
 
-        print('Object constructed!')
-
-    #Compare to json results
-    def divResults(self):
-        self.resultsDivs = []
         try:
-            for posting in self.results:
-                ret = {}
+            for i in range(len(self.results)):
                 #Title
-                if posting.find('a', self.titleElement):
-                    ret['title'] = posting.find('a',{'class':'jobtitle turnstileLink'}).get_text()
-                """
-                #Company
-                if posting.find('span', self.companyElement).a:
-                    ret['company'] = posting.find('span', self.companyElement).a.get_text()
+                if self.results[i].find('a', self.titleElement):
+                    resultsObj[i]['title'] = self.results[i].find('a',{'class':'jobtitle turnstileLink'}).get_text()
                 #Date Posted
-                if posting.find('span',self.dateElement):
-                    ret['date'] = posting.find('span',self.dateElement).get_text()
+                if self.results[i].find('span',self.dateElement):
+                    resultsObj[i]['date'] = self.results[i].find('span',self.dateElement).get_text()
                 #Salary
-                if posting.find('span',self.salaryElement): 
-                    ret['salary'] = posting.find('span',self.salaryElement).get_text()
-                #Location
-                if posting.find('div',self.locationElement):
-                    ret['location'] = posting.find('div',self.locationElement).get_text()
-                self.resultsDiv.append(ret)
-                """
+                if self.results[i].find('span',self.salaryElement): 
+                    resultsObj[i]['salary'] = self.results[i].find('span',self.salaryElement).get_text()
+                else:
+                    resultsObj[i]['salary'] = '' 
         except:
             print('Error scraping data')
+            pass
+        
+        del(self.results)
+        self.results = resultsObj 
+        print('Found ' + str(len(self.results)) + ' results')
 
     #Code - mockup
     def saveCSV(self):
